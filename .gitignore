@@ -1,0 +1,26 @@
+# Python virtual environment
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Local database files
+chroma_db/
+*.db
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+
+# Secrets file (we'll create this later)
+.env
+
+knowledge_base/
+
+*.mp4
+*.pdf
+*.docx
+*.txt

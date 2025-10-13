@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zoom Bot</title>
+
+  <link rel="stylesheet" href="https://source.zoom.us/3.13.2/css/react-select.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-primary: #0a0d14;
+      --bg-secondary: #0f1419;
+      --surface: rgba(255, 255, 255, 0.06);
+      --surface-elevated: rgba(255, 255, 255, 0.1);
+      --surface-hover: rgba(255, 255, 255, 0.08);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #06b6d4;
+      --accent-hover: #0891b2;
+      --accent-light: rgba(6, 182, 212, 0.15);
+      --success: #10b981;
+      --error: #f87171;
+      --warning: #f59e0b;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --glow: 0 0 20px rgba(6, 182, 212, 0.3);
+      --gradient-main: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0a0d14 100%);
+      --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+      --gradient-surface: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%);
+    }
+
+    /* Styles for light mode - removed for brevity, you can add them back if needed */
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow-x: hidden; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--gradient-main) !important;
+      color: var(--text-primary) !important;
+      line-height: 1.6;
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      position: relative;
+    }
+
+    body::before {
+      content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: 
+        radial-gradient(600px circle at 20% 30%, rgba(6, 182, 212, 0.15), transparent 50%),
+        radial-gradient(800px circle at 80% 70%, rgba(168, 85, 247, 0.1), transparent 50%),
+        radial-gradient(400px circle at 40% 90%, rgba(236, 72, 153, 0.1), transparent 50%);
+      pointer-events: none; z-index: -1;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; }
+    .header { text-align: center; margin-bottom: 3rem; position: relative; }
+    .logo-container {
+      display: inline-flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 0.75rem 1.5rem;
+      background: var(--gradient-surface); border-radius: 2rem; border: 1px solid var(--border);
+      backdrop-filter: blur(20px); transition: all 0.3s ease;
+    }
+    .logo-container:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--border-hover); }
+    .logo-icon {
+      width: 48px; height: 48px; background: var(--gradient-accent); border-radius: 12px; display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 1.25rem; color: white; box-shadow: var(--glow); position: relative; overflow: hidden;
+    }
+    .logo-icon::before {
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: left 0.6s;
+    }
+    .logo-container:hover .logo-icon::before { left: 100%; }
+    .header h1 {
+      font-size: clamp(2rem, 4vw, 2.5rem); font-weight: 700; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--text-primary), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header .subtitle { font-size: 1.1rem; color: var(--text-secondary); font-weight: 300; max-width: 600px; margin: 0 auto; }
+    
+    .main-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; align-items: start; }
+    @media (min-width: 768px) { .main-grid { grid-template-columns: 400px 1fr; } }
+
+    .card {
+      background: var(--gradient-surface) !important;
+      backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px;
+      overflow: hidden; transition: all 0.3s ease; position: relative;
+    }
+    .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent-light), transparent); }
+
+    .card-header, .log-header { padding: 1.5rem 1.5rem 1rem; border-bottom: 1px solid var(--border); position: relative; }
+    
+    .card-header h3, .log-header h3 { /* <--- FIX FOR TITLE COLOR */
+      font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; display: flex;
+      align-items: center; gap: 0.75rem; color: var(--text-primary) !important;
+    }
+    .card-header h3::before { content: ''; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent); }
+    .card-header p { color: var(--text-muted) !important; font-size: 0.9rem; }
+    .card-content { padding: 1.5rem; }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label { display: block; font-weight: 500; font-size: 0.9rem; color: var(--text-secondary) !important; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    
+    .form-group input {
+      width: 100%; padding: 0.875rem 1rem; font-size: 1rem;
+      background: var(--surface) !important; border: 1px solid var(--border) !important;
+      border-radius: 12px; color: var(--text-primary) !important;
+      transition: all 0.3s ease; font-family: inherit;
+    }
+    .form-group input::placeholder { color: var(--text-muted); }
+
+    .btn { /* <--- FIX FOR BUTTON SHINE (part 1) */
+      position: relative; padding: 0.875rem 2rem; font-size: 1rem; font-weight: 600;
+      background: var(--gradient-accent) !important; color: white !important;
+      border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s ease;
+      text-transform: uppercase; letter-spacing: 0.05em; width: 100%;
+      overflow: hidden; /* This was the missing piece */
+    }
+    
+    /* <--- FIX FOR BUTTON SHINE (part 2) */
+    .btn::before {
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.6s;
+    }
+    .btn:hover::before { left: 100%; }
+    .btn:hover { transform: translateY(-2px); box-shadow: var(--glow); }
+
+    .log-container { height: 500px; display: flex; flex-direction: column; }
+    .log-header { display: flex; align-items: center; justify-content: space-between; background: var(--surface-elevated) !important; }
+    .status-indicator { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); animation: pulse 2s infinite; }
+    .status-dot.active { background: var(--success); }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    
+    .log-content {
+      flex: 1; padding: 1rem; overflow-y: auto; font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+      font-size: 0.875rem; line-height: 1.6;
+      background: var(--bg-secondary) !important;
+    }
+    .log-content::-webkit-scrollbar { width: 6px; }
+    .log-content::-webkit-scrollbar-track { background: var(--surface); border-radius: 3px; }
+    .log-content::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 3px; }
+    .log-content::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    
+    .log-entry { margin-bottom: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 6px; border-left: 3px solid transparent; opacity: 0; transform: translateX(-10px); animation: slideIn 0.3s ease forwards; }
+    @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+    .log-entry.success { color: var(--success); background: rgba(16, 185, 129, 0.1); border-left-color: var(--success); }
+    .log-entry.error { color: var(--error); background: rgba(248, 113, 113, 0.1); border-left-color: var(--error); }
+    .log-entry.info { color: var(--accent); background: var(--accent-light); border-left-color: var(--accent); }
+    .log-entry.warning { color: var(--warning); background: rgba(245, 158, 11, 0.1); border-left-color: var(--warning); }
+    .timestamp { color: var(--text-muted); font-size: 0.8rem; margin-right: 0.5rem; }
+
+    #zmmtg-root { display: none; }
+    .hidden-ui { display: none !important; } /* Our powerful hiding class */
+    
+    @media (max-width: 768px) {
+      .container { padding: 1.5rem 1rem; } .header { margin-bottom: 2rem; } .main-grid { gap: 1.5rem; }
+      .card-content { padding: 1rem; } .log-container { height: 400px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header" id="page-header">
+      <div class="logo-container">
+        <div class="logo-icon">ZB</div>
+        <div><h1>Zoom Bot</h1></div>
+      </div>
+      <p class="subtitle">Advanced AI-powered meeting assistant.</p>
+    </header>
+
+    <div id="zmmtg-root"></div>
+
+    <main class="main-grid" id="setup-ui">
+      <div class="card">
+        <div class="card-header">
+          <h3>Meeting Configuration</h3>
+          <p>Enter your meeting details to connect the bot</p>
+        </div>
+        <div class="card-content">
+          <div class="form-group">
+            <label for="meeting-number">Meeting ID</label>
+            <div class="input-wrapper"><input type="text" id="meeting-number" placeholder="740 3241 9099" required /></div>
+          </div>
+          <div class="form-group">
+            <label for="meeting-password">Meeting Passcode</label>
+            <div class="input-wrapper"><input type="text" id="meeting-password" placeholder="Optional security code" /></div>
+          </div>
+          <div class="form-group">
+            <label for="bot-name">Bot Display Name</label>
+            <div class="input-wrapper"><input type="text" id="bot-name" placeholder="AI Assistant" value="RAG-Bot" required /></div>
+          </div>
+          <button id="join-btn" class="btn">Connect Bot</button>
+        </div>
+      </div>
+
+      <div class="card log-container">
+        <div class="log-header">
+          <h3>Live Activity Monitor</h3>
+          <div class="status-indicator">
+            <div class="status-dot" id="status-indicator"></div>
+            <span id="status-text">Disconnected</span>
+          </div>
+        </div>
+        <div class="log-content" id="log">
+          <!-- Log entries will be added by JavaScript -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://source.zoom.us/3.13.2/lib/vendor/react.min.js"></script>
+  <script src="https://source.zoom.us/3.13.2/lib/vendor/react-dom.min.js"></script>
+  <script src="https://source.zoom.us/3.13.2/lib/vendor/redux.min.js"></script>
+  <script src="https://source.zoom.us/3.13.2/lib/vendor/redux-thunk.min.js"></script>
+  <script src="https://source.zoom.us/3.13.2/lib/vendor/lodash.min.js"></script>
+  <script src="https://source.zoom.us/zoom-meeting-3.13.2.min.js"></script>
+  <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+
+</body>
+</html>
