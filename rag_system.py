@@ -130,61 +130,39 @@ class RAGSystem:
 
     def generate_response(self, question: str, is_privileged_user: bool = False) -> Dict:
         """
-        Generates a response using a flexible keyword-matching system for host commands,
-        and falls back to a RAG search for all other queries.
+        Processes messages to find and execute host commands ONLY.
+        All other messages from attendees or non-command messages from hosts are ignored.
         """
-        logger.info(f"Processing message: '{question}' (Privileged: {is_privileged_user})")
+        # We only care about messages from a host or co-host.
+        if not is_privileged_user:
+            # If the user is not privileged, do nothing.
+            return {} 
+
+        logger.info(f"Processing privileged message: '{question}'")
         
         try:
-            # --- TRACK 1: FLEXIBLE HOST COMMAND CHECK FROM DATABASE ---
-            if is_privileged_user:
-                host_commands = db_manager.get_host_commands() # Fetch live commands from DB
-                matched_command = self._find_best_command_match(question, host_commands)
+            # Fetch live commands from the database and check for a match.
+            host_commands = db_manager.get_host_commands() 
+            matched_command = self._find_best_command_match(question, host_commands)
 
-                if matched_command:
-                    logger.info(f"✅ Executing matched host command '{matched_command['name']}'.")
-                    return {
-                        "action": "broadcast",
-                        "bot_classification": f"Command: {matched_command['name']}",
-                        "broadcast_message": matched_command['broadcast_message'],
-                        "ack_message": matched_command['ack_message']
-                    }
+            if matched_command:
+                # If a command is found, return the broadcast action.
+                logger.info(f"✅ Executing matched host command '{matched_command['name']}'.")
+                return {
+                    "action": "broadcast",
+                    "bot_classification": f"Command: {matched_command['name']}",
+                    "broadcast_message": matched_command['broadcast_message'],
+                    "ack_message": matched_command['ack_message']
+                }
             
-            # --- TRACK 2: SEMANTIC RAG SEARCH FOR Q&A and RULES ---
-            logger.info("-> No host command matched. Proceeding with semantic RAG search.")
-            query_embedding = embedding_model.encode([question], show_progress_bar=False)
-            results = collection.query(
-                query_embeddings=query_embedding.tolist(),
-                n_results=5,
-                include=["documents"]
-            )
-            context_docs = results.get('documents', [[]])[0]
-
-            if not context_docs:
-                logger.warning(f"Vector search returned no documents for: '{question}'. Using fallback.")
-                return {"reply": FALLBACK_RESPONSE, "bot_classification": "Fallback"}
-
-            context_str = "\n\n---\n\n".join(context_docs)
-            
-            system_prompt = (
-                "You are an expert AI assistant for 'The Fitness Doctor'. Your persona is friendly, professional, and helpful. "
-                # ... (rest of prompt)
-            )
-            user_prompt = f"CONTEXT:\n{context_str}\n\nUSER QUESTION: {question}\n\nAnswer:"
-
-            response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                max_tokens=250, temperature=0.4
-            )
-            
-            answer = response.choices[0].message.content.strip()
-            logger.info(f"LLM generated answer: '{answer}'")
-            return {"reply": answer, "bot_classification": "RAG"}
+            # If the privileged user sent a message but it wasn't a command, do nothing.
+            logger.info("-> No host command matched. Ignoring message.")
+            return {}
 
         except Exception as e:
+            # If something goes wrong, log the error but don't reply.
             logger.error(f"An unexpected error occurred in generate_response: {e}", exc_info=True)
-            return {"reply": ERROR_RESPONSE, "bot_classification": "Error"}
+            return {}
 
 def is_a_meaningful_message(message: str) -> bool:
     return len(message.strip()) > 2 or message.strip().lower() == 'stop'

@@ -37,6 +37,14 @@
       --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
       --gradient-surface: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%);
     }
+     /* Makes passcode text visible in the popup */
+#zmmtg-root input[type="password"],
+#zmmtg-root .passcode-wrong-content input {
+  color: black !important;
+  -webkit-text-security: none !important;  /* Prevents dots masking text */
+}
+
+    
 
     /* Styles for light mode - removed for brevity, you can add them back if needed */
 
@@ -187,12 +195,12 @@
         </div>
         <div class="card-content">
           <div class="form-group">
-            <label for="meeting-number">Meeting ID</label>
-            <div class="input-wrapper"><input type="text" id="meeting-number" placeholder="740 3241 9099" required /></div>
+            <label for="meeting-link">Meeting Link</label>
+            <div class="input-wrapper"><input type="text" id="meeting-link" placeholder="Paste the full Zoom meeting link here" required /></div>
           </div>
           <div class="form-group">
-            <label for="meeting-password">Meeting Passcode</label>
-            <div class="input-wrapper"><input type="text" id="meeting-password" placeholder="Optional security code" /></div>
+            <label for="meeting-password">Meeting Passcode (if required)</label>
+            <div class="input-wrapper"><input type="text" id="meeting-password" placeholder="e.g., q8N0FA" /></div>
           </div>
           <div class="form-group">
             <label for="bot-name">Bot Display Name</label>

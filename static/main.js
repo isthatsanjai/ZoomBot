@@ -51,15 +51,36 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    /**
+     * Extracts the Meeting ID from a Zoom meeting URL.
+     * @param {string} url - The full Zoom meeting link.
+     * @returns {string|null} The meeting ID or null if not found.
+     */
+    function getMeetingIdFromLink(url) {
+        if (!url) return null;
+        // This regular expression looks for the number that follows "/j/" in the URL.
+        const match = url.match(/\/j\/(\d+)/);
+        return match ? match[1] : null;
+    }
+
     joinButton.addEventListener('click', async () => {
-        const meetingNumber = document.getElementById('meeting-number').value.replace(/\s+/g, '');
-        const passWord = document.getElementById('meeting-password').value;
+        const meetingLink = document.getElementById('meeting-link').value;
+        const passWord = document.getElementById('meeting-password').value; // Get passcode from its own field
         const userName = document.getElementById('bot-name').value;
 
-        if (!meetingNumber || !userName) {
-            alert('Please enter Meeting ID and Bot Name.');
+        if (!meetingLink || !userName) {
+            alert('Please enter the Meeting Link and a Bot Name.');
             return;
         }
+        
+        const meetingNumber = getMeetingIdFromLink(meetingLink);
+        
+        if (!meetingNumber) {
+            alert('Could not find a valid Meeting ID in the link. Please check the URL.');
+            return;
+        }
+
+        // --- The rest of the function is the same as before ---
 
         pageHeader.classList.add('hidden-ui');
         setupUI.classList.add('hidden-ui');
@@ -102,8 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ZoomMtg.join({
                     signature: signatureResponse.signature,
                     sdkKey: signatureResponse.apiKey,
-                    meetingNumber: meetingNumber,
-                    passWord: passWord,
+                    meetingNumber: meetingNumber, // Use the parsed meeting number
+                    passWord: passWord,           // Use the manually entered password
                     userName: userName,
                     userEmail: 'ragbot.assistant@example.com',
                     success: (success) => {
