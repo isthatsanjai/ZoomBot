@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const setupUI = document.getElementById('setup-ui');
     const zoomRoot = document.getElementById('zmmtg-root');
 
+    // Flag to prevent attaching multiple listeners
+    let isChatListenerAttached = false; 
+
     // Global variable to store participant roles
     let participantRoles = {};
 
@@ -65,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     joinButton.addEventListener('click', async () => {
         const meetingLink = document.getElementById('meeting-link').value;
-        const passWord = document.getElementById('meeting-password').value; // Get passcode from its own field
+        const passWord = document.getElementById('meeting-password').value;
         const userName = document.getElementById('bot-name').value;
 
         if (!meetingLink || !userName) {
@@ -79,8 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Could not find a valid Meeting ID in the link. Please check the URL.');
             return;
         }
-
-        // --- The rest of the function is the same as before ---
 
         pageHeader.classList.add('hidden-ui');
         setupUI.classList.add('hidden-ui');
@@ -123,8 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ZoomMtg.join({
                     signature: signatureResponse.signature,
                     sdkKey: signatureResponse.apiKey,
-                    meetingNumber: meetingNumber, // Use the parsed meeting number
-                    passWord: passWord,           // Use the manually entered password
+                    meetingNumber: meetingNumber,
+                    passWord: passWord,
                     userName: userName,
                     userEmail: 'ragbot.assistant@example.com',
                     success: (success) => {
@@ -147,10 +148,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupChatListener(meetingId, botName) {
         log(`Setting up chat listener...`);
 
+        // Check if the listener has already been set up. If so, do nothing.
+        if (isChatListenerAttached) {
+            log('Chat listener already active.', 'info');
+            return; 
+        }
+
         const PARTICIPANT_WELCOME_MESSAGE = "Hi! I'm a chat bot, here to help with any questions you have about The Fitness Doctor.";
         const HOST_WELCOME_MESSAGE = "Hello Host! I'm your RAG-Bot assistant, ready to help. You can trigger broadcasts by sending me a command like 'send replay link'. I'll handle attendee questions automatically.";
 
-        // --- KEY CHANGE: Increased timeout to 5 seconds ---
         setTimeout(() => {
             ZoomMtg.getAttendeeslist({
                 success: function(data) {
@@ -175,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 error: function(error) { log(`Error getting attendees list: ${JSON.stringify(error)}`, 'error'); }
             });
-        }, 5000); // Increased from 3000ms to 5000ms
+        }, 5000);
             
         ZoomMtg.inMeetingServiceListener('onReceiveChatMsg', (chatData) => {
             log(`Chat received from ${chatData.sender}: "${chatData?.content?.text}"`);
@@ -184,7 +190,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         ZoomMtg.inMeetingServiceListener('onUserJoin', (data) => {
-            // CORRECTED: The `data` object itself often represents the user in this event
             const newUser = data;
             if (!newUser || !newUser.userId) {
                 console.error("Invalid onUserJoin data structure:", data);
@@ -194,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
             log(`A new user joined: ${newUser.userName}`);
             if (newUser.userName === botName) return;
             
-            // Update our roles map with the new user
             participantRoles[newUser.userId] = { isHost: newUser.isHost, isCoHost: newUser.isCoHost };
             
             const newUserIsPrivileged = newUser.isHost || newUser.isCoHost;
@@ -209,6 +213,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }, 2000); 
         });
+
+        // Set the flag to true so this block never runs again
+        isChatListenerAttached = true;
+        log('✅ Chat listener successfully attached.', 'success');
     }
 
     async function processChatMessage(meetingId, chatData) {
