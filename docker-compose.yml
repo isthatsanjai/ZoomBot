@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   db:
     image: postgres:14-alpine
@@ -8,11 +9,22 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
+      # Use the variable from your .env file
       - "${DB_PORT}:5432"
     volumes:
-      # This will run the schema on the new, empty database
-      - ./schema.sql:/docker-entrypoint-initdb.d/init.sql
+      # This line is critical for creating your tables
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      # This line saves your data
       - postgres_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      # This runs the web interface on localhost:8080
+      - "8080:8080"
+    depends_on:
+      - db
 
 volumes:
   postgres_data:

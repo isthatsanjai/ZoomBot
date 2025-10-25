@@ -25,8 +25,8 @@ CREATE TABLE IF NOT EXISTS chat_logs (
     meeting_id BIGINT REFERENCES meetings(meeting_id) ON DELETE CASCADE,
     user_id BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
     user_chat TEXT,
-    user_role VARCHAR(50), -- e.g., 'host', 'co-host', 'attendee'
-    chat_type VARCHAR(50), -- e.g., 'DM', 'Everyone'
+    user_role VARCHAR(50), --  'host', 'co-host', 'attendee'
+    chat_type VARCHAR(50), -- 'DM', 'Everyone'
     bot_classification VARCHAR(100), -- 'Command' or 'RAG'
     bot_response TEXT,
     timestamp TIMESTAMPTZ DEFAULT NOW()
@@ -42,7 +42,6 @@ CREATE TABLE IF NOT EXISTS commands (
     is_active BOOLEAN DEFAULT TRUE
 );
 
--- Let's pre-populate the commands table with your examples
 INSERT INTO commands (command_name, trigger_phrases, broadcast_message, ack_message) VALUES
 ('SEND_BREAKTHROUGH_SESSION_LINK', 
 '{"send the breakthrough session message", "send breakthrough link", "post breakthrough", "drop the breakthrough link", "send everyone the breakthrough link", "breakthrough session please"}',
